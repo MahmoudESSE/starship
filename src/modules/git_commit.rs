@@ -28,7 +28,9 @@ pub fn module<'a>(context: &'a Context) -> Option<Module<'a>> {
                 _ => None,
             })
             .map(|variable| match variable {
-                "hash" => Some(Ok(git_hash(context.get_repo().ok()?, &config)?)),
+                "hash" if !config.hash_disabled => {
+                    Some(Ok(git_hash(context.get_repo().ok()?, &config)?))
+                }
                 "tag" if !config.tag_disabled => Some(Ok(format!(
                     "{}{}",
                     config.tag_symbol,
