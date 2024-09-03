@@ -287,6 +287,46 @@ mod tests {
     }
 
     #[test]
+    fn test_render_tag_when_hash_disabled() -> io::Result<()> {
+        let repo_dir = fixture_repo(FixtureProvider::Git)?;
+
+        create_command("git")?
+            .args(["tag", "v1", "-m", "Testing tags"])
+            .current_dir(repo_dir.path())
+            .output()?;
+
+        let git_tag = create_command("git")?
+            .args(["describe", "--tags", "--exact-match", "HEAD"])
+            .current_dir(repo_dir.path())
+            .output()?
+            .stdout;
+        let tag_output = str::from_utf8(&git_tag).unwrap().trim();
+
+        let expected_output = tag_output.to_string();
+
+        let actual = ModuleRenderer::new("git_commit")
+            .config(toml::toml! {
+                [git_commit]
+                    only_detached = false
+                    tag_disabled = false
+                    hash_disabled = true
+                    tag_symbol = " "
+            })
+            .path(repo_dir.path())
+            .collect();
+
+        let expected = Some(format!(
+            "{} ",
+            Color::Green
+                .bold()
+                .paint(format!("( {})", expected_output.trim()))
+        ));
+
+        assert_eq!(expected, actual);
+        Ok(())
+    }
+
+    #[test]
     fn test_render_commit_hash_only_detached_on_detached_with_tag_enabled() -> io::Result<()> {
         let repo_dir = fixture_repo(FixtureProvider::Git)?;
 
